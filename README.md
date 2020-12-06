@@ -49,7 +49,8 @@ python train.py --tag 100 --learn normal --env FetchPickObstacle-v1 --goal custo
 python train.py --tag 110 --learn hgg --env FetchPickObstacle-v1 --goal custom --stop_hgg_threshold 0.3
 python train.py --tag 120 --learn hgg --env FetchPickObstacle-v1 --goal custom --graph True --n_x 31 --n_y 31 --n_z 11 --stop_hgg_threshold 0.3
 python train.py --tag 140 --learn normal+goalGAN --env FetchPickObstacle-v1 --goal custom
-python train.py --tag 111 --learn hgg --env FetchPickObstacle-v1 --goal custom --stop_hgg_threshold 0.5 --route True
+# hgg + route
+python train.py --tag 111 --learn hgg --env FetchPickObstacle-v1 --goal custom --stop_hgg_threshold 0.5 --route True 
 
 # FetchPickNoObstacle
 python train.py --tag 200 --learn normal --env FetchPickNoObstacle-v1 --goal custom 
