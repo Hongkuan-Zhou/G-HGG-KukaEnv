@@ -1,0 +1,7 @@
+*.log
+*.temp
+/venv
+/toplot
+/figures
+/log
+/gym
