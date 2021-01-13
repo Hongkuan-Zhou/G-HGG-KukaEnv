@@ -63,8 +63,31 @@ python train.py --tag 300 --learn normal --env FetchPickAndThrow-v1 --goal custo
 python train.py --tag 310 --learn hgg --env FetchPickAndThrow-v1 --goal custom --stop_hgg_threshold 0.9
 python train.py --tag 320 --learn hgg --env FetchPickAndThrow-v1 --goal custom --graph True --n_x 51 --n_y 51 --n_z 7 --stop_hgg_threshold 0.9
 python train.py --tag 340 --learn normal+goalGAN --env FetchPickAndThrow-v1 --goal custom
-```
 
+
+# KukaReach
+python train.py --tag 400 --learn normal --env KukaReach-v1 
+python train.py --tag 410 --learn hgg --env KukaReach-v1 --stop_hgg_threshold 0.3
+python train.py --tag 420 --learn hgg --env KukaReach-v1 --graph True --n_x 51 --n_y 51 --n_z 7 --stop_hgg_threshold 0.9
+
+# KukaPickAndPlaceObstacle
+python train.py --tag 510 --learn hgg --env KukaPickAndPlaceObstacle-v1 --stop_hgg_threshold 0.3
+python train.py --tag 520 --learn hgg --env KukaPickAndPlaceObstacle-v1 --graph True --n_x 51 --n_y 51 --n_z 15 --stop_hgg_threshold 0.9
+# KukaPickNoObstacle
+python train.py --tag 610 --learn hgg --env KukaPickNoObstacle-v1 --stop_hgg_threshold 0.3
+python train.py --tag 620 --learn hgg --env KukaPickNoObstacle-v1 --graph True --n_x 51 --n_y 51 --n_z 15 --stop_hgg_threshold 0.9
+
+# KukaPickThrow
+python train.py --tag 710 --learn hgg --env KukaPickThrow-v1 --stop_hgg_threshold 0.3 --epoch 30
+python train.py --tag 720 --learn hgg --env KukaPickThrow-v1 --graph True --n_x 51 --n_y 51 --n_z 7 --stop_hgg_threshold 0.9 --epoch 30
+
+# KukaPushLabyrinth
+python train.py --tag 820 --learn hgg --env KukaPushLabyrinth-v1 --graph True --n_x 51 --n_y 51 --n_z 7 --stop_hgg_threshold 0.9
+
+# KukaPushSlide
+python train.py --tag 910 --learn hgg --env KukaPushSlide-v1 --stop_hgg_threshold 0.3 --epoch 20
+
+```
 ## Plotting
 
 To plot the agent's performance on multiple training runs, copy all training run directories into one directory. For example, we put all FetchPushLabyrinth runs in a directory called BA_Labyrinth, same for FetchPickObstacle (BA_Obstacle), FetchPickNoObstacle (BA_NoObstacle) and FetchPickAndThrow (BA_Throw). naming=0 is recommended as default. For our result plot commands, have a look at create_result_figures.sh. 
@@ -92,6 +115,29 @@ To look at the agent solving the respective task according to his learned policy
 
 ```bash
 # Scheme: python play.py --env env_id --goal custom --play_path log_dir --play_epoch <epoch number, latest or best>
+
+
+# KukaReach
+python play.py --env KukaReach-v1 --play_path log/400-ddpg-KukaReach-v1-normal --play_epoch best
+
+# KukaPickAndPlaceObstacle
+python play.py --env KukaPickAndPlaceObstacle-v1 --play_path log/520-ddpg-KukaPickAndPlaceObstacle-v1-hgg-graph-stop --play_epoch best
+python play.py --env KukaPickAndPlaceObstacle-v1 --play_path log/510-ddpg-KukaPickAndPlaceObstacle-v1-hgg-stop --play_epoch best
+
+# KukaPickNoObstacle
+python play.py --env KukaPickNoObstacle-v1 --play_path log/610-ddpg-KukaPickNoObstacle-v1-hgg-stop --play_epoch best
+python play.py --env KukaPickNoObstacle-v1 --play_path log/620-ddpg-KukaPickNoObstacle-v1-hgg-graph-stop --play_epoch best
+
+# KukaPickThrow
+python play.py --env KukaPickThrow-v1 --play_path log/710-ddpg-KukaPickThrow-v1-hgg-stop --play_epoch best
+python play.py --env KukaPickThrow-v1 --play_path log/720-ddpg-KukaPickThrow-v1-hgg-graph-stop --play_epoch best
+
+# KukaPushLabyrinth
+python play.py --env KukaPushLabyrinth-v1 --play_path log/810-ddpg-KukaPushLabyrinth-v1-hgg-stop --play_epoch best
+python play.py --env KukaPushLabyrinth-v1 --play_path log/820-ddpg-KukaPushLabyrinth-v1-hgg-graph-stop --play_epoch best
+
+# KukaPushSlide
+python play.py --env KukaPushSlide-v1 --play_path log/910-ddpg-KukaPushSlide-v1-hgg-stop --play_epoch best
 
 # FetchPushLabyrinth
 # G-HGG

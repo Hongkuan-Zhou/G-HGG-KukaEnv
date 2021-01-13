@@ -212,7 +212,7 @@ if __name__ == "__main__":
     plt.ylabel('Median Success Rate', fontsize=20)
     ax = plt.gca()
     plt.tick_params(labelsize=16)
-    my_x_ticks = np.arange(0, 450, 50)
+    my_x_ticks = np.arange(0, 650, 50)
     plt.xticks(my_x_ticks)
     plt.tight_layout()
     plt.legend(loc=location, prop={'size':15})

@@ -23,7 +23,7 @@ class MatchSampler:
 
     def add_noise(self, pre_goal, noise_std=None):
         goal = pre_goal.copy()
-        dim = 2 if self.args.env[:5] == 'Fetch' else self.dim
+        dim = 2 if self.args.env[:5] == 'fetch' else self.dim
         if noise_std is None: noise_std = self.delta
         goal[:dim] += np.random.normal(0, noise_std, size=dim)
         return goal.copy()

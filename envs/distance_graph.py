@@ -1,7 +1,8 @@
 import sys
 import numpy as np
 import matplotlib
-matplotlib.use("TkAgg") # for plotting, had to sudo apt-get install python3-tk
+
+matplotlib.use("TkAgg")  # for plotting, had to sudo apt-get install python3-tk
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle, PathPatch
 from scipy.sparse import csr_matrix, coo_matrix
@@ -9,11 +10,10 @@ from scipy.sparse.csgraph import dijkstra
 from timeit import default_timer as timer
 from mpl_toolkits.mplot3d import axes3d
 import mpl_toolkits.mplot3d.art3d as art3d
-
+import math
 
 # TODO: edit section
 class DistanceGraph:
-
     cs_graph = None
     dist_matrix = None
     predecessors = None
@@ -42,7 +42,6 @@ class DistanceGraph:
         self.n_x = num_vertices[0]
         self.n_y = num_vertices[1]
         self.n_z = num_vertices[2]
-
 
         self.obstacles = obstacles
 
@@ -82,24 +81,27 @@ class DistanceGraph:
         n_y_min = 0
         n_z_min = 0
         for [m_x, m_y, m_z, l, w, h] in self.obstacles:
-            n_x_min = max(n_x_min, (self.x_max - self.x_min) / (2*l) + 1)
-            n_y_min = max(n_y_min, (self.y_max - self.y_min) / (2*w) + 1)
-            n_z_min = max(n_z_min, (self.z_max - self.z_min) / (2*h) + 1)
-            if l <= self.dx/2 or w <= self.dy/2 or h <= self.dz/2:
+            n_x_min = max(n_x_min, (self.x_max - self.x_min) / (2 * l) + 1)
+            n_y_min = max(n_y_min, (self.y_max - self.y_min) / (2 * w) + 1)
+            n_z_min = max(n_z_min, (self.z_max - self.z_min) / (2 * h) + 1)
+            if l <= self.dx / 2 or w <= self.dy / 2 or h <= self.dz / 2:
                 graph_okay = False
 
         # print section
         if self.args:
             self.args.logger.info("Created DistanceGraph with: ")
-            self.args.logger.info("\tField: x: [{}, {}], y: [{}, {}], z: [{}, {}]".format(self.x_min, self.x_max, self.y_min, self.y_max, self.z_min, self.z_max))
+            self.args.logger.info(
+                "\tField: x: [{}, {}], y: [{}, {}], z: [{}, {}]".format(self.x_min, self.x_max, self.y_min, self.y_max,
+                                                                        self.z_min, self.z_max))
             self.args.logger.info("\tObstacles:")
             for obstacle in obstacles:
                 self.args.logger.info("\t\t{}".format(obstacle))
-            self.args.logger.info("\tNumber of vertices: n_x: {}, n_y: {}, n_z: {}".format(self.n_x, self.n_y, self.n_z))
+            self.args.logger.info(
+                "\tNumber of vertices: n_x: {}, n_y: {}, n_z: {}".format(self.n_x, self.n_y, self.n_z))
             self.args.logger.info("\tTotal number of vertices: {}".format(self.n))
             self.args.logger.info("\tDx: {}, Dy: {}, Dz: {}".format(self.dx, self.dy, self.dz))
-            self.args.logger.info("\tRequired number of vertices: n_x > {}, n_y > {}, n_z > {}".format(n_x_min, n_y_min, n_z_min))
-
+            self.args.logger.info(
+                "\tRequired number of vertices: n_x > {}, n_y > {}, n_z > {}".format(n_x_min, n_y_min, n_z_min))
 
         if not graph_okay:
             raise Exception("Vertex density is not high enough, requirements see above")
@@ -120,7 +122,6 @@ class DistanceGraph:
         node = gridpoint[0] + gridpoint[1] * self.n_x + gridpoint[2] * self.n_x * self.n_y
         return int(node)
 
-
     def vertex2gridpoint(self, vertex):
         # converts vertex ID to gridpoint representation [i, j ,k]
         k = np.floor(vertex / (self.n_x * self.n_y))
@@ -129,26 +130,28 @@ class DistanceGraph:
         i = vertex % self.n_x
         return i, j, k
 
-
     def gridpoint2coords(self, gridpoint):
         # converts gridpoint representation [i, j, k] to coords representation [x, y, z]
         [i, j, k] = gridpoint
-        x = self.x_min + i*self.dx
-        y = self.y_min + j*self.dy
-        z = self.z_min + k*self.dz
+        x = self.x_min + i * self.dx
+        y = self.y_min + j * self.dy
+        z = self.z_min + k * self.dz
         return x, y, z
-
 
     def coords2gridpoint(self, coords):
         # converts coords representation [x, y, z] to gridpoint representation [i, j, k]
         [x, y, z] = coords
         if not (self.x_min <= x <= self.x_max and self.y_min <= y <= self.y_max and self.z_min <= z <= self.z_max):
             return None
-        i = np.round((x-self.x_min)/self.dx)
-        j = np.round((y-self.y_min)/self.dy)
-        k = np.round((z-self.z_min)/self.dz)
-        return i, j, k
+        i = np.round((x - self.x_min) / self.dx)
+        j = np.round((y - self.y_min) / self.dy)
+        k = np.round((z - self.z_min) / self.dz)
+        Dx = abs(x - (self.x_min + self.dx * i))
+        Dy = abs(y - (self.y_min + self.dy * j))
+        Dz = abs(z - (self.z_min + self.dz * k))
 
+
+        return i, j, k, math.sqrt(Dx*Dx + Dy*Dy + Dz* Dz)
 
     def compute_cs_graph(self):
         # create cs_graph as a sparse matrix of size [num_nodes, num_nodes],
@@ -166,7 +169,7 @@ class DistanceGraph:
             for j in range(self.n_y):
                 for k in range(self.n_z):
                     x, y, z = self.gridpoint2coords([i, j, k])
-                    if self.is_obstacle(x, y, z): # if point is black
+                    if self.is_obstacle(x, y, z):  # if point is black
                         self.obstacle_vertices[i, j, k] = 1
 
         # connect only non-obstacle vertices with edges
@@ -175,22 +178,23 @@ class DistanceGraph:
         for i in range(self.n_x):
             for j in range(self.n_y):
                 for k in range(self.n_z):
-                        for a, b, c in self.previous:
-                            if self.obstacle_vertices[i, j, k] == 0:
-                                if self.obstacle_vertices[i + a, j + b, k + c] == 0: # i.e. is white
-                                    basevertex = self.gridpoint2vertex([i, j, k])
-                                    connectvertex = self.gridpoint2vertex([i + a, j + b, k + c])
-                                    # distance d between two vertices
-                                    d = np.sqrt(a*a*self.dx*self.dx + b*b*self.dy*self.dy + c*c*self.dz*self.dz)
-                                    row.append(basevertex)
-                                    col.append(connectvertex)
-                                    data.append(d)
+                    for a, b, c in self.previous:
+                        if self.obstacle_vertices[i, j, k] == 0:
+                            if self.obstacle_vertices[i + a, j + b, k + c] == 0:  # i.e. is white
+                                basevertex = self.gridpoint2vertex([i, j, k])
+                                connectvertex = self.gridpoint2vertex([i + a, j + b, k + c])
+                                # distance d between two vertices
+                                d = np.sqrt(
+                                    a * a * self.dx * self.dx + b * b * self.dy * self.dy + c * c * self.dz * self.dz)
+                                row.append(basevertex)
+                                col.append(connectvertex)
+                                data.append(d)
         # create cs_graph as a sparse matrix,
         # where the entry cs_graph[node_a, node_b] == True only if there is a connection between vertex_a and vertex_b
-        self.cs_graph = csr_matrix((data, (row,col)), shape=(self.n, self.n))
+        self.cs_graph = csr_matrix((data, (row, col)), shape=(self.n, self.n))
         end = timer()
         if self.args:
-            self.args.logger.info("\tdone after {} secs".format(end-start))
+            self.args.logger.info("\tdone after {} secs".format(end - start))
 
     def compute_dist_matrix(self, compute_predecessors=False):
         # create a distance_matrix dist_matrix from self.cs_graph by using dijkstra shortest path algorithm
@@ -207,7 +211,7 @@ class DistanceGraph:
             self.dist_matrix = dijkstra(self.cs_graph, directed=False, return_predecessors=False)
         end = timer()
         if self.args:
-            self.args.logger.info("\t done after {} secs".format(end-start))
+            self.args.logger.info("\t done after {} secs".format(end - start))
 
     def get_dist(self, coords1, coords2, return_path=False):
         # get the shortest distance between coord1 and coords2 (each of form [x, y, z]) on cs_graph
@@ -217,18 +221,22 @@ class DistanceGraph:
             raise Exception("No dist_matrix available!")
 
         # transfer coords [x, y, z] to the closest node in gridpoint representation [i, j, k]
-        gridpoint1 = self.coords2gridpoint(coords1)
-        gridpoint2 = self.coords2gridpoint(coords2)
-
+        gridpoint1_error1 = self.coords2gridpoint(coords1)
+        gridpoint2_error2 = self.coords2gridpoint(coords2)
         # if gridpoint is not in grid, assume there is no connection (shortest distance = inf)
-        if gridpoint1 is None or gridpoint2 is None:
+        if gridpoint1_error1 is None or gridpoint2_error2 is None:
             return np.inf, None
+        gridpoint1 = gridpoint1_error1[0:3]
+        error1 = gridpoint1_error1[3]
+        gridpoint2 = gridpoint2_error2[0:3]
+        error2 = gridpoint2_error2[3]
+
 
         # transfer gridpoint representation to vertex ID
         vertex_a = self.gridpoint2vertex(gridpoint1)
         vertex_b = self.gridpoint2vertex(gridpoint2)
         if not return_path:
-            return self.dist_matrix[vertex_a, vertex_b], None
+            return self.dist_matrix[vertex_a, vertex_b] , None
         else:
             if self.predecessors is None:
                 raise Exception("No predecessors available!")
@@ -243,7 +251,7 @@ class DistanceGraph:
                         self.args.logger.info("No path!")
                     return self.dist_matrix[vertex_a, vertex_b], None
                 path.append(self.gridpoint2coords(self.vertex2gridpoint(current_node)))
-            return self.dist_matrix[vertex_a, vertex_b], path
+            return self.dist_matrix[vertex_a, vertex_b] , path
 
     def plot_goals(self, goals=None, colors=None, azim=-12, elev=15, show=False, save_path='test', extra=None):
         # Plot goals with different options
@@ -305,7 +313,8 @@ class DistanceGraph:
             plt.show()
         plt.savefig(save_path + ".pdf")
 
-    def plot_graph(self, path=None, graph=False, obstacle_vertices=False, goals=None, save_path='test', show=False, azim=-12, elev=15, extra=None):
+    def plot_graph(self, path=None, graph=False, obstacle_vertices=False, goals=None, save_path='test', show=False,
+                   azim=-12, elev=15, extra=None):
         # Plot graph with different options
         if self.args:
             self.args.logger.info("Plotting ...")
@@ -322,34 +331,34 @@ class DistanceGraph:
         # plots obstacle
         for [m_x, m_y, m_z, l, w, h] in self.obstacles:
             # top
-            side1 = Rectangle((m_x-l, m_y-w), 2*l, 2*w, color=[0,0,1,0.1])
+            side1 = Rectangle((m_x - l, m_y - w), 2 * l, 2 * w, color=[0, 0, 1, 0.1])
             ax.add_patch(side1)
-            art3d.pathpatch_2d_to_3d(side1, z=m_z+h, zdir="z",)
+            art3d.pathpatch_2d_to_3d(side1, z=m_z + h, zdir="z", )
             # bottom
-            side1 = Rectangle((m_x-l, m_y-w), 2*l, 2*w, color=[0,0,1,0.1])
+            side1 = Rectangle((m_x - l, m_y - w), 2 * l, 2 * w, color=[0, 0, 1, 0.1])
             ax.add_patch(side1)
-            art3d.pathpatch_2d_to_3d(side1, z=m_z-h, zdir="z")
+            art3d.pathpatch_2d_to_3d(side1, z=m_z - h, zdir="z")
             # back
-            side1 = Rectangle((m_y-w, m_z-h), 2*w, 2*h, color=[0,0,1,0.1])
+            side1 = Rectangle((m_y - w, m_z - h), 2 * w, 2 * h, color=[0, 0, 1, 0.1])
             ax.add_patch(side1)
-            art3d.pathpatch_2d_to_3d(side1, z=m_x+l, zdir="x")
+            art3d.pathpatch_2d_to_3d(side1, z=m_x + l, zdir="x")
             # front
-            side1 = Rectangle((m_y-w, m_z-h), 2*w, 2*h, color=[0,0,1,0.1])
+            side1 = Rectangle((m_y - w, m_z - h), 2 * w, 2 * h, color=[0, 0, 1, 0.1])
             ax.add_patch(side1)
-            art3d.pathpatch_2d_to_3d(side1, z=m_x-l, zdir="x")
+            art3d.pathpatch_2d_to_3d(side1, z=m_x - l, zdir="x")
             # right
-            side1 = Rectangle((m_x-l, m_z-h), 2*l, 2*h, color=[0,0,1,0.1])
+            side1 = Rectangle((m_x - l, m_z - h), 2 * l, 2 * h, color=[0, 0, 1, 0.1])
             ax.add_patch(side1)
-            art3d.pathpatch_2d_to_3d(side1, z=m_y+w, zdir="y")
+            art3d.pathpatch_2d_to_3d(side1, z=m_y + w, zdir="y")
             # left
-            side1 = Rectangle((m_x-l, m_z-h), 2*l, 2*h, color=[0,0,1,0.1])
+            side1 = Rectangle((m_x - l, m_z - h), 2 * l, 2 * h, color=[0, 0, 1, 0.1])
             ax.add_patch(side1)
-            art3d.pathpatch_2d_to_3d(side1, z=m_y-w, zdir="y")
+            art3d.pathpatch_2d_to_3d(side1, z=m_y - w, zdir="y")
 
         if path:
-            for i in range(len(path)-1):
+            for i in range(len(path) - 1):
                 a = path[i]
-                b = path[i+1]
+                b = path[i + 1]
                 X, Y, Z = [a[0], b[0]], [a[1], b[1]], [a[2], b[2]]
                 ax.plot(X, Y, Z, c=[1, 0, 0, 1])
 
@@ -367,7 +376,7 @@ class DistanceGraph:
                     for k in range(self.n_z):
                         x, y, z = self.gridpoint2coords([i, j, k])
                         if self.obstacle_vertices[i, j, k] == 0:
-                            ax.scatter([x], [y], [z], c=[0,0,0,0.3])
+                            ax.scatter([x], [y], [z], c=[0, 0, 0, 0.3])
         # plot goals:
         if goals:
             for goal in goals:
@@ -389,5 +398,3 @@ class DistanceGraph:
         plt.savefig(save_path + ".pdf")
         if self.args:
             self.args.logger.info("\tdone")
-
-

@@ -13,7 +13,7 @@ class Player:
         # initialize environment
         self.args = args
         self.env = make_env(args)
-        self.args.timesteps = self.env.env.env.spec.max_episode_steps
+        self.args.timesteps = self.env.max_episode_steps
         self.env_test = make_env(args)
         self.info = []
         self.test_rollouts = 100
@@ -49,6 +49,28 @@ class Player:
                 infos.append(info)
                 env.render()
 
+    def demoRecord(self, raw_path="videos/KukaReach"):
+        env = self.env
+        goals = [[0.84604588, 0.14732964, 1.35766576], [0.79483348, -0.14184732,  1.20930532],
+                 [0.919015, -0.15907337, 1.18060975], [7.11554270e-01, 1.51756884e-03, 1.34433537e+00],
+                 [0.70905836, 0.13042637, 1.19320888]]
+        recorder = VideoRecorder(env.env.env, base_path=raw_path)
+        acc_sum, obs = 0.0, []
+        test_rollouts = 5
+        for i in range(test_rollouts):
+            env.reset()
+            env.set_goal(np.array(goals[i]))
+            obs.append(goal_based_process(env.get_obs()))
+            print("Rollout {}/{} ...".format(i + 1, test_rollouts))
+            for timestep in range(self.args.timesteps):
+                actions = self.my_step_batch(obs)
+                obs, infos = [], []
+                ob, _, _, info = env.step(actions[0])
+                obs.append(goal_based_process(ob))
+                infos.append(info)
+                recorder.capture_frame()
+        recorder.close()
+
     def record_video(self, raw_path="myrecord"):
         env = self.env
         test_rollouts = 5
@@ -57,6 +79,8 @@ class Player:
         acc_sum, obs = 0.0, []
         for i in range(test_rollouts):
             obs.append(goal_based_process(env.reset()))
+            if hasattr(env.env.env, "set_camera_pos"):
+                env.env.env.set_camera_pos(i)
             print("Rollout {}/{} ...".format(i + 1, test_rollouts))
             for timestep in range(self.args.timesteps):
                 actions = self.my_step_batch(obs)
@@ -73,5 +97,9 @@ if __name__ == "__main__":
     # Call play.py in order to see current policy progress
     args = get_args()
     player = Player(args)
-    player.play()
-    #player.record_video(raw_path="/media/sf_UbuntuShare/myvid_01")
+    if not args.record:
+        player.play()
+    else:
+        player.record_video(raw_path="videos/" + args.play_path[8:])
+
+    # player.demoRecord()
